@@ -12,11 +12,13 @@ This tool tests increasing context sizes with your chosen Ollama model to find t
 
 ## Prerequisites
 
+- Linux operating system
 - Python 3.8+
-- Ollama (https://ollama.ai/) installed and running
+- Ollama (https://ollama.com/) installed and running
 - Ollama models downloaded (You can use `ollama list` to find all your current models)
-- For VRAM monitoring (AMD GPUs only):
-  - radeontop installed (`sudo apt install radeontop` on Ubuntu/Debian)
+- For VRAM monitoring:
+  - NVIDIA GPU: No additional installation needed (uses nvidia-smi, included with drivers)
+  - AMD GPU: radeontop installed (`sudo apt install radeontop` on Ubuntu/Debian)
 
 ## Installation
 
@@ -56,7 +58,7 @@ Example with all options:
 The tool generates detailed logs including:
 - Test parameters and configuration
 - Performance metrics for each test
-- VRAM usage statistics
+- VRAM usage statistics (when available)
 - Token processing speeds
 - Final recommended context size
 
@@ -64,19 +66,24 @@ Logs are saved to files named: `context_test_MODEL_TIMESTAMP.log`
 
 ## Important Notes
 
-1. **Framework Specificity**: This tool tests context sizes specifically for Ollama. Results may differ significantly with other frameworks like:
+1. **Linux Only**: This tool is designed for and tested on Linux systems only.
+
+2. **VRAM Monitoring**:
+   - NVIDIA GPUs: Automatically supported through nvidia-smi (included with drivers)
+   - AMD GPUs: Requires radeontop to be installed
+   - Systems without supported GPUs will run without VRAM monitoring
+
+3. **Framework Specificity**: This tool tests context sizes specifically for Ollama. Results may differ significantly with other frameworks like:
    - Pure llama.cpp Python bindings
    - vLLM
    - Different quantization methods
    - Other serving frameworks
 
-2. **Hardware Dependence**: Results are highly dependent on your specific hardware configuration:
+4. **Hardware Dependence**: Results are highly dependent on your specific hardware configuration:
    - GPU memory and performance
    - CPU capabilities
    - System memory
    - Storage speed
-
-3. **VRAM Monitoring**: Currently supports AMD GPUs using radeontop. NVIDIA support might be added in the future.
 
 ## Understanding Results
 
@@ -90,7 +97,7 @@ The "maximum recommended context size" is the largest size that maintained accep
 ## Contributing
 
 Contributions are welcome! Areas for potential improvement:
-- NVIDIA GPU VRAM monitoring support
+- Windows/macOS support
 - Additional performance metrics
 - Support for other frameworks
 - Better token counting accuracy
