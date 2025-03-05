@@ -10,22 +10,29 @@ from functools import wraps
 import timeout_decorator
 from vram_usage import get_vram_info
 
+import os
+
 
 def setup_logging(model_name: str) -> str:
     """Setup logging configuration and return the log filename."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_filename = f"context_test_{model_name}_{timestamp}.log"
 
+    # Ensure the logs directory exists
+    log_dir = "logs"
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, log_filename)
+
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',
         handlers=[
-            logging.FileHandler(log_filename),
+            logging.FileHandler(log_path),
             logging.StreamHandler()
         ]
     )
 
-    return log_filename
+    return log_path
 
 
 def timeout_handler(signum, frame):
@@ -105,20 +112,25 @@ def generate_test_prompt(context_size: int) -> Tuple[str, int, int]:
 @retry_on_timeout(max_retries=3, timeout_seconds=60)
 def run_ollama_query(model: str, context_size: int) -> Tuple[GenerateResponse, str, int]:
     """Run a query to Ollama with a specific context size and return the response metrics."""
-    full_prompt, estimated_tokens, repetitions = generate_test_prompt(context_size)
+    try:
+        full_prompt, estimated_tokens, repetitions = generate_test_prompt(context_size)
 
-    logging.debug(f"Estimated tokens in prompt: {estimated_tokens}")
-    logging.debug(f"Number of repetitions: {repetitions}")
+        logging.debug(f"Estimated tokens in prompt: {estimated_tokens}")
+        logging.debug(f"Number of repetitions: {repetitions}")
 
-    client = ollama.Client()
-    response = client.generate(
-        model=model,
-        prompt=full_prompt,
-        options={
-            "num_ctx": context_size
-        }
-    )
-    return response, full_prompt, estimated_tokens
+        client = ollama.Client(host='http://localhost:11434')  # Explicit host
+        response = client.generate(
+            model=model,
+            prompt=full_prompt,
+            options={
+                "num_ctx": context_size
+            }
+        )
+        return response, full_prompt, estimated_tokens
+    except ConnectionError as e:
+        logging.error(f"Failed to connect to Ollama server: {str(e)}")
+        logging.info("Make sure Ollama is running and accessible at http://localhost:11434")
+        raise
 
 
 def calculate_tokens_per_second(response: GenerateResponse) -> float:

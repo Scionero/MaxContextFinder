@@ -2,6 +2,26 @@ import subprocess
 import re
 import logging
 import shutil
+from typing import Tuple
+
+def is_rocm_smi_available() -> bool:
+    """Check if rocm-smi is available."""
+    try:
+        paths = [
+            shutil.which('rocm-smi'),
+            '/opt/rocm/bin/rocm-smi',
+            'C:\\Program Files\\AMD\\ROCm\\bin\\rocm-smi.exe'
+        ]
+        for path in paths:
+            if path:
+                subprocess.run([path, '--showmeminfo', 'vram'],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               timeout=2)
+                return True
+    except (subprocess.SubprocessError, subprocess.TimeoutExpired):
+        pass
+    return False
 
 def get_gpu_type():
     """Detect whether system has NVIDIA or AMD GPU with monitoring tools."""
@@ -12,10 +32,15 @@ def get_gpu_type():
         except (subprocess.SubprocessError, subprocess.TimeoutExpired):
             pass
 
+    # Check for ROCm SMI first (official AMD tool)
+    if is_rocm_smi_available():
+        return "amd_rocm"
+
+    # Fallback to radeontop on Linux
     if shutil.which('radeontop'):
         try:
             subprocess.run(['radeontop', '-d', '-', '-l', '1'], stdout=subprocess.PIPE, timeout=2)
-            return "amd"
+            return "amd_radeontop"
         except (subprocess.SubprocessError, subprocess.TimeoutExpired):
             pass
 
@@ -33,8 +58,37 @@ def get_nvidia_vram():
         logging.warning(f"Error getting NVIDIA VRAM info: {str(e)}")
     return 0.0, 0.0
 
-def get_amd_vram():
-    """Get VRAM info using radeontop."""
+def get_amd_rocm_vram() -> Tuple[float, float]:
+    """Get VRAM info using rocm-smi."""
+    try:
+        cmd = shutil.which('rocm-smi') or '/opt/rocm/bin/rocm-smi'
+        if not cmd:
+            cmd = 'C:\\Program Files\\AMD\\ROCm\\bin\\rocm-smi.exe'
+
+        result = subprocess.run(
+            [cmd, '--showmeminfo', 'vram', '--json'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=2
+        )
+
+        if result.returncode == 0:
+            import json
+            data = json.loads(result.stdout)
+            for card in data.values():
+                vram_info = card.get('VRAM Memory')
+                if vram_info:
+                    used_mb = float(vram_info['used']) / 1024 / 1024
+                    total_mb = float(vram_info['total']) / 1024 / 1024
+                    return used_mb, total_mb
+
+    except Exception as e:
+        logging.warning(f"Error getting VRAM info via ROCm SMI: {str(e)}")
+    return 0.0, 0.0
+
+def get_amd_radeontop_vram():
+    """Get VRAM info using radeontop (Linux fallback)."""
     try:
         cmd = ["radeontop", "-d", "-", "-l", "1"]
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
@@ -55,7 +109,7 @@ def get_amd_vram():
 
         process.terminate()
     except (subprocess.SubprocessError, Exception) as e:
-        logging.warning(f"Error getting AMD VRAM info: {str(e)}")
+        logging.warning(f"Error getting AMD VRAM info via radeontop: {str(e)}")
     return 0.0, 0.0
 
 def get_vram_info():
@@ -70,6 +124,8 @@ def get_vram_info():
 
     if get_vram_info._gpu_type == "nvidia":
         return get_nvidia_vram()
-    elif get_vram_info._gpu_type == "amd":
-        return get_amd_vram()
+    elif get_vram_info._gpu_type == "amd_rocm":
+        return get_amd_rocm_vram()
+    elif get_vram_info._gpu_type == "amd_radeontop":
+        return get_amd_radeontop_vram()
     return 0.0, 0.0
