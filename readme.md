@@ -12,34 +12,45 @@ This tool tests increasing context sizes with your chosen Ollama model to find t
 
 ## Prerequisites
 
-- Linux operating system
+### Windows
+- Windows 10/11
 - Python 3.8+
 - Ollama (https://ollama.com/) installed and running
-- Ollama models downloaded (You can use `ollama list` to find all your current models)
 - For VRAM monitoring:
-  - NVIDIA GPU: No additional installation needed (uses nvidia-smi, included with drivers)
-  - AMD GPU: radeontop installed (`sudo apt install radeontop` on Ubuntu/Debian)
+  - NVIDIA GPU: No additional setup needed (uses nvidia-smi, included with drivers)
+  - AMD GPU: ROCm for Windows (if available for your GPU)
+
+### Linux
+- Python 3.8+
+- Ollama installed and running
+- For VRAM monitoring:
+  - NVIDIA GPU: No additional setup needed (uses nvidia-smi)
+  - AMD GPU: Either ROCm or radeontop (`sudo apt install radeontop` on Ubuntu/Debian)
 
 ## Installation
 
 1. Clone this repository:
-
-    git clone https://github.com/yourusername/ollama-context-tester
-    cd ollama-context-tester
+```bash
+git clone https://github.com/yourusername/ollama-context-tester
+cd ollama-context-tester
+```
 
 2. Install required Python packages:
-
-    pip install ollama timeout-decorator
+```bash
+pip install -r requirements.txt
+```
 
 ## Usage
 
 Basic usage:
-
-    python main.py MODEL_NAME
+```bash
+python main.py MODEL_NAME
+```
 
 Example:
-
-    python main.py codellama:latest
+```bash
+python main.py codellama:latest
+```
 
 ### Command Line Options
 
@@ -50,8 +61,9 @@ Example:
 - `--tests`: Number of tests per context size (default: 3)
 
 Example with all options:
-
-    python main.py mistral:7b --min_token_rate 15 --start 2048 --step 2048 --tests 5
+```bash
+python main.py mistral:7b --min_token_rate 15 --start 2048 --step 2048 --tests 5
+```
 
 ### Output
 
@@ -62,24 +74,36 @@ The tool generates detailed logs including:
 - Token processing speeds
 - Final recommended context size
 
-Logs are saved to files named: `context_test_MODEL_TIMESTAMP.log`
+Logs are saved to the `logs` directory with names: `context_test_MODEL_TIMESTAMP.log`
+
+## VRAM Monitoring Support
+
+### Windows
+- NVIDIA GPUs: Fully supported through nvidia-smi
+- AMD GPUs: Supported through ROCm when available
+- Intel GPUs: Not currently supported
+
+### Linux
+- NVIDIA GPUs: Fully supported through nvidia-smi
+- AMD GPUs: Supported through either:
+  - ROCm (preferred when available)
+  - radeontop (fallback option)
+- Intel GPUs: Not currently supported
 
 ## Important Notes
 
-1. **Linux Only**: This tool is designed for and tested on Linux systems only.
-
-2. **VRAM Monitoring**:
-   - NVIDIA GPUs: Automatically supported through nvidia-smi (included with drivers)
-   - AMD GPUs: Requires radeontop to be installed
+1. **GPU Support**: 
+   - NVIDIA GPUs are fully supported on both Windows and Linux
+   - AMD GPU support varies by platform and available tools
    - Systems without supported GPUs will run without VRAM monitoring
 
-3. **Framework Specificity**: This tool tests context sizes specifically for Ollama. Results may differ significantly with other frameworks like:
-   - Pure llama.cpp Python bindings
+2. **Framework Specificity**: Results are specific to Ollama and may differ from other frameworks like:
+   - Pure llama.cpp
    - vLLM
    - Different quantization methods
    - Other serving frameworks
 
-4. **Hardware Dependence**: Results are highly dependent on your specific hardware configuration:
+3. **Hardware Dependence**: Results depend on your hardware:
    - GPU memory and performance
    - CPU capabilities
    - System memory
@@ -87,7 +111,7 @@ Logs are saved to files named: `context_test_MODEL_TIMESTAMP.log`
 
 ## Understanding Results
 
-The tool will stop testing larger context sizes when either:
+The tool stops testing larger context sizes when:
 - Token processing speed drops below the minimum threshold
 - VRAM usage approaches 100%
 - Model encounters errors or timeouts
@@ -96,9 +120,9 @@ The "maximum recommended context size" is the largest size that maintained accep
 
 ## Contributing
 
-Contributions are welcome! Areas for potential improvement:
-- Windows/macOS support
-- Additional performance metrics
+Contributions are welcome! Areas for improvement:
+- Additional GPU support
+- More performance metrics
 - Support for other frameworks
 - Better token counting accuracy
 - Alternative testing methodologies
@@ -106,12 +130,12 @@ Contributions are welcome! Areas for potential improvement:
 Please feel free to:
 - Open issues for bugs or feature requests
 - Submit pull requests with improvements
-- Share your testing results with different models/hardware
+- Share your testing results
 - Suggest better testing methodologies
 
 ## Disclaimer
 
-Results from this tool should be considered approximate. Real-world performance may vary based on:
+Results should be considered approximate. Real-world performance may vary based on:
 - Specific prompt content
 - Model implementation details
 - System load and conditions
