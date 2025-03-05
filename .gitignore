@@ -1,1 +1,18 @@
+# IDE specific files
 .idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Python specific
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+.venv/
+env/
+
+# OS specific
+.DS_Store
+Thumbs.db
