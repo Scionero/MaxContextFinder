@@ -47,15 +47,27 @@ def get_gpu_type():
     return None
 
 def get_nvidia_vram():
-    """Get VRAM info using nvidia-smi."""
+    """Get aggregated VRAM info using nvidia-smi for multiple GPUs."""
     try:
         cmd = ["nvidia-smi", "--query-gpu=memory.used,memory.total", "--format=csv,noheader,nounits"]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
+        
         if result.returncode == 0:
-            used, total = map(float, result.stdout.strip().split(','))
-            return used, total
+            total_used_vram = 0.0
+            total_vram = 0.0
+            
+            # Split the output into lines and process each line (each GPU)
+            for line in result.stdout.strip().split('\n'):
+                used, total = map(float, line.split(','))
+                total_used_vram += used
+                total_vram += total
+            
+            return total_used_vram, total_vram
+    
     except (subprocess.SubprocessError, ValueError) as e:
         logging.warning(f"Error getting NVIDIA VRAM info: {str(e)}")
+    
+    # Return 0.0 for both if there's an error or no GPUs are found
     return 0.0, 0.0
 
 def get_amd_rocm_vram() -> Tuple[float, float]:
