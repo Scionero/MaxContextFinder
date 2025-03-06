@@ -16,6 +16,7 @@ import os
 def setup_logging(model_name: str) -> str:
     """Setup logging configuration and return the log filename."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    model_name = model_name.replace("/", "_")
     log_filename = f"context_test_{model_name}_{timestamp}.log"
 
     # Ensure the logs directory exists
