@@ -32,7 +32,7 @@ This tool tests increasing context sizes with your chosen Ollama model to find t
 1. Clone this repository:
 ```bash
 git clone https://github.com/scionero/maxcontextfinder
-cd ollama-context-tester
+cd maxcontextfinder
 ```
 
 2. Install required Python packages:
