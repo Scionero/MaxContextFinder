@@ -109,7 +109,7 @@ def generate_test_prompt(context_size: int) -> Tuple[str, int, int]:
     return full_prompt, total_tokens, repetitions
 
 
-@retry_on_timeout(max_retries=3, args.timeout=60)
+@retry_on_timeout(max_retries=3, timeout_seconds=args.timeout)
 def run_ollama_query(model: str, context_size: int) -> Tuple[GenerateResponse, str, int]:
     """Run a query to Ollama with a specific context size and return the response metrics."""
     try:
