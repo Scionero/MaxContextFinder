@@ -109,7 +109,7 @@ def generate_test_prompt(context_size: int) -> Tuple[str, int, int]:
     return full_prompt, total_tokens, repetitions
 
 
-@retry_on_timeout(max_retries=3, timeout_seconds=args.timeout)
+@retry_on_timeout(max_retries=3, timeout_seconds=60)
 def run_ollama_query(model: str, context_size: int) -> Tuple[GenerateResponse, str, int]:
     """Run a query to Ollama with a specific context size and return the response metrics."""
     try:
@@ -284,7 +284,6 @@ if __name__ == "__main__":
     parser.add_argument("--start", type=int, default=1024, help="Starting context size")
     parser.add_argument("--step", type=int, default=1024, help="Step size for context increments")
     parser.add_argument("--tests", type=int, default=3, help="Number of tests per context size")
-    parser.add_argument('--timeout', type=int, default=60, help='Timeout in seconds for retry mechanism')
-    
+
     args = parser.parse_args()
     run_context_test(**vars(args))
